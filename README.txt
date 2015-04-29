@@ -12,7 +12,7 @@
  CHANGES.txt        A list of software versions and changes
  docs/              Documentation folder
  LICENSE.txt        Software license information
- marineHeatWaves/   marineHeatWaves module folder
+ marineHeatWaves.py marineHeatWaves module
  README.txt         This file
  setup.py           Installation script (see below)
 
