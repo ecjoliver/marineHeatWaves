@@ -89,7 +89,8 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
     Notes:
 
       1. This function assumes that the input time series consist of continuous daily values
-         with no missing values.
+         with no missing values. Time ranges which start and end part-way through the calendar
+         year are supported.
 
       2. This function supports leap years. This is done by ignoring Feb 29s for the initial
          calculation of the climatology and threshold. The value of these for Feb 29 is then
@@ -178,10 +179,10 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
         if d == feb29:
             continue
         # find all indices for each day of the year +/- windowHalfWidth and from them calculate the threshold
-        tt0 = np.where(doy[clim_start:clim_end] == d)[0] 
+        tt0 = np.where(doy[clim_start:clim_end+1] == d)[0] 
         tt = np.array([])
         for w in range(-windowHalfWidth, windowHalfWidth+1):
-            tt = np.append(tt, tt0 + w)
+            tt = np.append(tt, clim_start+tt0 + w)
         thresh_climYear[d-1] = np.percentile(sst[tt.astype(int)], pctile)
         seas_climYear[d-1] = np.mean(sst[tt.astype(int)])
     # Special case for Feb 29
@@ -338,7 +339,10 @@ def blockAverage(t, mhw, blockLength=1):
 
     Notes:
 
-      This function assumes that the input time vector consists of continuous daily values.
+      This function assumes that the input time vector consists of continuous daily values. Note that
+      in the case of time ranges which start and end part-way through the calendar year, the block
+      averages at the endpoints, for which there is less than a block length of data, will need to be
+      interpreted with care.
 
     Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Feb-Mar 2015
 
