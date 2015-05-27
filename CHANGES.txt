@@ -2,3 +2,4 @@ v0.1, 28 April 2015 -- Initial release (beta).
 v0.2, 29 April 2015 -- Fixed functionality of __init__.py
 v0.3, 29 April 2015 -- Changed from Python package (marineHeatWaves.marineHeatWaves) to individual python module (marineHeatWaves)
 v0.4, 27 May 2015   -- Added calculation of confidence limits to MHW trend calculation
+v0.5, 27 May 2015   -- Added absolute intensities to list of MHW metrics
