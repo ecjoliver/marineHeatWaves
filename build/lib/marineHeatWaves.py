@@ -14,18 +14,18 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2):
+def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False):
     '''
 
     Applies the Hobday et al. (in preparation) marine heat wave definition to an input time
-    series of sst ('sst') along with a time vector ('t'). Outputs properties of
+    series of temp ('temp') along with a time vector ('t'). Outputs properties of
     all detected marine heat waves.
 
     Inputs:
 
       t       Time vector, in datetime format (e.g., date(1982,1,1).toordinal())
               [1D numpy array of length T]
-      sst     Temperature vector [1D numpy array of length T]
+      temp    Temperature vector [1D numpy array of length T]
 
     Outputs:
 
@@ -65,6 +65,8 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
 
         'thresh'               Seasonally varying threshold (e.g., 90th percentile)
         'seas'                 Climatological seasonal cycle
+        'missing'              A vector of TRUE/FALSE indicating which elements in 
+                               temp were missing values for the MHWs detection
 
     Options:
 
@@ -85,6 +87,11 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
                              which occur before/after a short gap (DEFAULT = True)
       maxGap                 Maximum length of gap allowed for the joining of MHWs
                              (DEFAULT = 2 [days])
+      maxPadLength           Specifies the maximum length [days] over which to interpolate
+                             (pad) missing data (specified as nans) in input temp time series.
+                             i.e., any consecutive blocks of NaNs with length greater
+                             than maxPadLength will be left as NaN. Set as an integer.
+                             (DEFAULT = False, interpolates over all missing values).
 
     Notes:
 
@@ -99,6 +106,10 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
       3. The calculation of onset and decline rates assumes that the heat wave started a half-day
          before the start day and ended a half-day after the end-day. (This is consistent with the
          duration definition as implemented, which assumes duration = end day - start day + 1.)
+
+      4. For the purposes of MHW detection, any missing temp values not interpolated over will be
+         set equal to the seasonal climatology. This means they will trigger the end/start of any
+         adjacent temp values which satisfy the MHW criteria.
 
     Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Feb 2015
 
@@ -162,6 +173,10 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
     # Calculate threshold and seasonal climatology (varying with day-of-year)
     #
 
+    # Pad missing values for all consecutive missing blocks of length <= maxPadLength
+    if maxPadLength:
+        temp = pad(temp, maxPadLength=maxPadLength)
+
     # Length of climatological year
     lenClimYear = 366
     # Start and end indices
@@ -183,8 +198,8 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
         tt = np.array([])
         for w in range(-windowHalfWidth, windowHalfWidth+1):
             tt = np.append(tt, clim_start+tt0 + w)
-        thresh_climYear[d-1] = np.percentile(sst[tt.astype(int)], pctile)
-        seas_climYear[d-1] = np.mean(sst[tt.astype(int)])
+        thresh_climYear[d-1] = np.percentile(nonans(temp[tt.astype(int)]), pctile)
+        seas_climYear[d-1] = np.mean(nonans(temp[tt.astype(int)]))
     # Special case for Feb 29
     thresh_climYear[feb29-1] = 0.5*thresh_climYear[feb29-2] + 0.5*thresh_climYear[feb29]
     seas_climYear[feb29-1] = 0.5*seas_climYear[feb29-2] + 0.5*seas_climYear[feb29]
@@ -198,12 +213,17 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
     clim['thresh'] = thresh_climYear[doy.astype(int)-1]
     clim['seas'] = seas_climYear[doy.astype(int)-1]
 
+    # Save vector indicating which points in temp are missing values
+    clim['missing'] = np.isnan(temp)
+    # Set all remaining missing temp values equal to the climatology
+    temp[np.isnan(temp)] = clim['seas'][np.isnan(temp)]
+
     #
     # Find MHWs as exceedances above the threshold
     #
 
     # Time series of "True" when threshold is exceeded, "False" otherwise
-    exceed_bool = sst - clim['thresh']
+    exceed_bool = temp - clim['thresh']
     exceed_bool[exceed_bool<=0] = False
     exceed_bool[exceed_bool>0] = True
     # Find contiguous regions of exceed_bool = True
@@ -245,12 +265,12 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
         tt_end = np.where(t==mhw['time_end'][ev])[0][0]
         mhw['index_start'].append(tt_start)
         mhw['index_end'].append(tt_end)
-        sst_mhw = sst[tt_start:tt_end+1]
+        temp_mhw = temp[tt_start:tt_end+1]
         thresh_mhw = clim['thresh'][tt_start:tt_end+1]
         seas_mhw = clim['seas'][tt_start:tt_end+1]
-        mhw_relSeas = sst_mhw - seas_mhw
-        mhw_relThresh = sst_mhw - thresh_mhw
-        mhw_abs = sst_mhw
+        mhw_relSeas = temp_mhw - seas_mhw
+        mhw_relThresh = temp_mhw - thresh_mhw
+        mhw_abs = temp_mhw
         # Find peak
         tt_peak = np.argmax(mhw_relSeas)
         mhw['time_peak'].append(mhw['time_start'][ev] + tt_peak)
@@ -274,7 +294,7 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
         # Rates of onset and decline
         # Requires getting MHW strength at "start" and "end" of event (continuous: assume start/end half-day before/after first/last point)
         if tt_start > 0:
-            mhw_relSeas_start = 0.5*(mhw_relSeas[0] + sst[tt_start-1] - clim['seas'][tt_start-1])
+            mhw_relSeas_start = 0.5*(mhw_relSeas[0] + temp[tt_start-1] - clim['seas'][tt_start-1])
             mhw['rate_onset'].append((mhw_relSeas[tt_peak] - mhw_relSeas_start) / (tt_peak+0.5))
         else: # MHW starts at beginning of time series
             if tt_peak == 0: # Peak is also at begining of time series, assume onset time = 1 day
@@ -282,7 +302,7 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
             else:
                 mhw['rate_onset'].append((mhw_relSeas[tt_peak] - mhw_relSeas[0]) / tt_peak)
         if tt_end < T-1:
-            mhw_relSeas_end = 0.5*(mhw_relSeas[-1] + sst[tt_end+1] - clim['seas'][tt_end+1])
+            mhw_relSeas_end = 0.5*(mhw_relSeas[-1] + temp[tt_end+1] - clim['seas'][tt_end+1])
             mhw['rate_decline'].append((mhw_relSeas[tt_peak] - mhw_relSeas_end) / (tt_end-tt_peak+0.5))
         else: # MHW finishes at end of time series
             if tt_peak == T-1: # Peak is also at end of time series, assume decline time = 1 day
@@ -293,7 +313,7 @@ def detect(t, sst, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, 
     return mhw, clim
 
 
-def blockAverage(t, mhw, blockLength=1):
+def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     '''
 
     Calculate statistics of marine heatwave (MHW) properties averaged over blocks of
@@ -336,6 +356,11 @@ def blockAverage(t, mhw, blockLength=1):
       blockLength            Size of block (in years) over which to calculate the
                              averaged MHW properties. Must be an integer greater than
                              or equal to 1 (DEFAULT = 1 [year])
+      removeMissing          Boolean switch indicating whether to remove (set = NaN)
+                             statistics for any blocks in which there were missing 
+                             temperature values (DEFAULT = FALSE)
+      clim                   The temperature climatology (including missing value information)
+                             as output by marineHeatWaves.detect (required if removeMissing = TRUE)
 
     Notes:
 
@@ -437,6 +462,31 @@ def blockAverage(t, mhw, blockLength=1):
     mhwBlock['intensity_var_abs'] = mhwBlock['intensity_var_abs'] / count
     mhwBlock['rate_onset'] = mhwBlock['rate_onset'] / count
     mhwBlock['rate_decline'] = mhwBlock['rate_decline'] / count
+
+    #
+    # Remove years with missing values
+    #
+
+    if removeMissing:
+        missingYears = np.unique(year[np.where(clim['missing'])[0]])
+        for y in range(len(missingYears)):
+            iMissing = np.where((mhwBlock['years_start'] <= missingYears[y]) * (mhwBlock['years_end'] >= missingYears[y]))[0][0]
+            mhwBlock['count'][iMissing] = np.nan
+            mhwBlock['duration'][iMissing] = np.nan
+            mhwBlock['intensity_max'][iMissing] = np.nan
+            mhwBlock['intensity_mean'][iMissing] = np.nan
+            mhwBlock['intensity_cumulative'][iMissing] = np.nan
+            mhwBlock['intensity_var'][iMissing] = np.nan
+            mhwBlock['intensity_max_relThresh'][iMissing] = np.nan
+            mhwBlock['intensity_mean_relThresh'][iMissing] = np.nan
+            mhwBlock['intensity_cumulative_relThresh'][iMissing] = np.nan
+            mhwBlock['intensity_var_relThresh'][iMissing] = np.nan
+            mhwBlock['intensity_max_abs'][iMissing] = np.nan
+            mhwBlock['intensity_mean_abs'][iMissing] = np.nan
+            mhwBlock['intensity_cumulative_abs'][iMissing] = np.nan
+            mhwBlock['intensity_var_abs'][iMissing] = np.nan
+            mhwBlock['rate_onset'][iMissing] = np.nan
+            mhwBlock['rate_decline'][iMissing] = np.nan
 
     return mhwBlock
 
@@ -565,3 +615,42 @@ def runavg(ts, w):
     ts = ts_smooth[N:2*N]
 
     return ts
+
+
+def pad(data, maxPadLength=False):
+    '''
+
+    Linearly interpolate over missing data (NaNs) in a time series.
+
+    Inputs:
+
+      data	     Time series [1D numpy array]
+      maxPadLength   Specifies the maximum length over which to interpolate,
+                     i.e., any consecutive blocks of NaNs with length greater
+                     than maxPadLength will be left as NaN. Set as an integer.
+                     maxPadLength=False (default) interpolates over all NaNs.
+
+    Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Jun 2015
+
+    '''
+    data_padded = data.copy()
+    bad_indexes = np.isnan(data)
+    good_indexes = np.logical_not(bad_indexes)
+    good_data = data[good_indexes]
+    interpolated = np.interp(bad_indexes.nonzero()[0], good_indexes.nonzero()[0], good_data)
+    data_padded[bad_indexes] = interpolated
+    if maxPadLength:
+        blocks, n_blocks = ndimage.label(np.isnan(data))
+        for bl in range(1, n_blocks+1):
+            if (blocks==bl).sum() > maxPadLength:
+                data_padded[blocks==bl] = np.nan
+
+    return data_padded
+
+
+def nonans(array):
+    '''
+    Return input array [1D numpy array] with
+    all nan values removed
+    '''
+    return array[~np.isnan(array)]
