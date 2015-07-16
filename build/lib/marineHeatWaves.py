@@ -342,6 +342,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
         'intensity_cumulative' Average MHW "cumulative intensity" in each block [deg. C x days]
         'rate_onset'           Average MHW onset rate in each block [deg. C / days]
         'rate_decline'         Average MHW decline rate in each block [deg. C / days]
+        'total_days'           Total number of MHW days in each block [days]
+        'total_icum'           Total cumulative intensity over all MHWs in each block [deg. C x days]
 
         'intensity_max_relThresh', 'intensity_mean_relThresh', 'intensity_var_relThresh', 
         and 'intensity_cumulative_relThresh' are as above except relative to the
@@ -413,6 +415,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     mhwBlock['intensity_var_abs'] = np.zeros(nBlocks)
     mhwBlock['rate_onset'] = np.zeros(nBlocks)
     mhwBlock['rate_decline'] = np.zeros(nBlocks)
+    mhwBlock['total_days'] = np.zeros(nBlocks)
+    mhwBlock['total_icum'] = np.zeros(nBlocks)
 
     # Start, end, and centre years for all blocks
     mhwBlock['years_start'] = years[range(0, len(years), blockLength)]
@@ -443,6 +447,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
         mhwBlock['intensity_var_abs'][iBlock] += mhw['intensity_var_abs'][i]
         mhwBlock['rate_onset'][iBlock] += mhw['rate_onset'][i]
         mhwBlock['rate_decline'][iBlock] += mhw['rate_decline'][i]
+        mhwBlock['total_days'][iBlock] += mhw['duration'][i]
+        mhwBlock['total_icum'][iBlock] += mhw['intensity_cumulative'][i]
 
     # Calculate averages
     count = 1.*mhwBlock['count']
@@ -487,6 +493,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
             mhwBlock['intensity_var_abs'][iMissing] = np.nan
             mhwBlock['rate_onset'][iMissing] = np.nan
             mhwBlock['rate_decline'][iMissing] = np.nan
+            mhwBlock['total_days'][iMissing] = np.nan
+            mhwBlock['total_icum'][iMissing] = np.nan
 
     return mhwBlock
 
