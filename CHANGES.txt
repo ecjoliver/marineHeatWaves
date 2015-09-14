@@ -6,3 +6,4 @@ v0.5, 27 May 2015   -- Added absolute intensities to list of MHW metrics
 v0.6, 28 May 2015   -- Added support for time ranges which start/end partway through the year
 v0.7, 4 June 2015   -- Added support for missing values in temperature time series
 v0.8, 16 July 2015  -- Added calculations of total MHW days and cumulative intensity
+v0.9, 14 Sep 2015   -- Added calculation of MHW rank and return period

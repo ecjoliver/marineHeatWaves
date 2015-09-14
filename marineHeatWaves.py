@@ -595,6 +595,79 @@ def meanTrend(mhwBlock, alpha=0.05):
     return mean, trend, dtrend
 
 
+def rank(t, mhw):
+    '''
+
+    Calculate the rank and return periods of marine heatwaves (MHWs) according to
+    each metric. Takes as input a collection of detected MHWs (using the
+    marineHeatWaves.detect function) and a time vector for the source SST series.
+
+    Inputs:
+
+      t       Time vector, in datetime format (e.g., date(1982,1,1).toordinal())
+      mhw     Marine heat waves (MHWs) detected using marineHeatWaves.detect
+
+    Outputs:
+
+      rank          The rank of each MHW according to each MHW property. A rank of 1 is the
+                    largest, 2 is the 2nd largest, etc. Each key (listed below) is a list
+                    of length N where N is the number of MHWs.
+
+      returnPeriod  The return period (in years) of each MHW according to each MHW property.
+                    The return period signifies, statistically, the recurrence interval for
+                    an event at least as large/long as the event in quetion. Each key (listed
+                    below) is a list of length N where N is the number of MHWs.
+ 
+        'duration'             Average MHW duration in each block [days]
+        'intensity_max'        Average MHW "maximum (peak) intensity" in each block [deg. C]
+        'intensity_mean'       Average MHW "mean intensity" in each block [deg. C]
+        'intensity_var'        Average MHW "intensity variability" in each block [deg. C]
+        'intensity_cumulative' Average MHW "cumulative intensity" in each block [deg. C x days]
+        'rate_onset'           Average MHW onset rate in each block [deg. C / days]
+        'rate_decline'         Average MHW decline rate in each block [deg. C / days]
+        'total_days'           Total number of MHW days in each block [days]
+        'total_icum'           Total cumulative intensity over all MHWs in each block [deg. C x days]
+
+        'intensity_max_relThresh', 'intensity_mean_relThresh', 'intensity_var_relThresh', 
+        and 'intensity_cumulative_relThresh' are as above except relative to the
+        threshold (e.g., 90th percentile) rather than the seasonal climatology
+
+        'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
+        'intensity_cumulative_abs' are as above except as absolute magnitudes
+        rather than relative to the seasonal climatology or threshold
+
+    Notes:
+
+      This function assumes that the MHWs were calculated over a suitably long record that return
+      periods make sense. If the record length is a few years or less than this becomes meaningless.
+
+    Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Sep 2015
+
+    '''
+
+    # Initialize rank and return period dictionaries
+    rank = {}
+    returnPeriod = {}
+
+    # Number of years on record
+    nYears = len(t)/365.25
+
+    # Loop over all keys in mhw
+    for key in mhw.keys():
+        # Skip irrelevant keys of mhw, only calculate rank/returns for MHW properties
+        if (key == 'date_end') + (key == 'date_peak') + (key == 'date_start') + (key == 'date_end') + (key == 'date_peak') + (key == 'date_start') + (key == 'index_end') + (key == 'index_peak') + (key == 'index_start') + (key == 'n_events'):
+            continue
+
+        # Calculate ranks
+        rank[key] = mhw['n_events'] - np.array(mhw[key]).argsort().argsort()  
+        # Calculate return period as (# years on record + 1) / (# of occurrences of event)
+        # Return period is for events of at least the event magnitude/duration
+        returnPeriod[key] = (nYears + 1) / rank[key]
+
+    # Return rank, return
+    return rank, returnPeriod
+
+
 def runavg(ts, w):
     '''
 
