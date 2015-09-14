@@ -101,7 +101,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     Notes:
 
       1. This function assumes that the input time series consist of continuous daily values
-         with no missing values. Time ranges which start and end part-way through the calendar
+         with few missing values. Time ranges which start and end part-way through the calendar
          year are supported.
 
       2. This function supports leap years. This is done by ignoring Feb 29s for the initial
@@ -112,9 +112,9 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
          before the start day and ended a half-day after the end-day. (This is consistent with the
          duration definition as implemented, which assumes duration = end day - start day + 1.)
 
-      4. For the purposes of MHW detection, any missing temp values not interpolated over will be
-         set equal to the seasonal climatology. This means they will trigger the end/start of any
-         adjacent temp values which satisfy the MHW criteria.
+      4. For the purposes of MHW detection, any missing temp values not interpolated over (through
+         optional maxPadLLength) will be set equal to the seasonal climatology. This means they will
+         trigger the end/start of any adjacent temp values which satisfy the MHW criteria.
 
     Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Feb 2015
 
