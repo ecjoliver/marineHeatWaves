@@ -57,6 +57,11 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
 
+        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
+        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
+        intensity (relative to the climatology) was 1.5 times the value of the threshold
+        (relative to climatology, i.e., threshold - climatology)
+
         'n_events'             A scalar integer (not a list) indicating the total
                                number of detected MHW events
 
@@ -142,6 +147,8 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     mhw['intensity_mean_abs'] = [] # [deg C]
     mhw['intensity_var_abs'] = [] # [deg C]
     mhw['intensity_cumulative_abs'] = [] # [deg C]
+    mhw['intensity_max_norm'] = []
+    mhw['intensity_mean_norm'] = []
     mhw['rate_onset'] = [] # [deg C / day]
     mhw['rate_decline'] = [] # [deg C / day]
 
@@ -270,6 +277,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         seas_mhw = clim['seas'][tt_start:tt_end+1]
         mhw_relSeas = temp_mhw - seas_mhw
         mhw_relThresh = temp_mhw - thresh_mhw
+        mhw_relThreshNorm = (temp_mhw - thresh_mhw) / (thresh_mhw - seas_mhw)
         mhw_abs = temp_mhw
         # Find peak
         tt_peak = np.argmax(mhw_relSeas)
@@ -291,6 +299,8 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         mhw['intensity_mean_abs'].append(mhw_abs.mean())
         mhw['intensity_var_abs'].append(np.sqrt(mhw_abs.var()))
         mhw['intensity_cumulative_abs'].append(mhw_abs.sum())
+        mhw['intensity_max_norm'].append(1. + mhw_relThreshNorm[tt_peak])
+        mhw['intensity_mean_norm'].append(1. + mhw_relThreshNorm.mean())
         # Rates of onset and decline
         # Requires getting MHW strength at "start" and "end" of event (continuous: assume start/end half-day before/after first/last point)
         if tt_start > 0:
@@ -353,6 +363,11 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
 
+        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
+        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
+        intensity (relative to the climatology) was 1.5 times the value of the threshold
+        (relative to climatology, i.e., threshold - climatology)
+
     Options:
 
       blockLength            Size of block (in years) over which to calculate the
@@ -413,6 +428,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     mhwBlock['intensity_mean_abs'] = np.zeros(nBlocks)
     mhwBlock['intensity_cumulative_abs'] = np.zeros(nBlocks)
     mhwBlock['intensity_var_abs'] = np.zeros(nBlocks)
+    mhwBlock['intensity_max_norm'] = np.zeros(nBlocks)
+    mhwBlock['intensity_mean_norm'] = np.zeros(nBlocks)
     mhwBlock['rate_onset'] = np.zeros(nBlocks)
     mhwBlock['rate_decline'] = np.zeros(nBlocks)
     mhwBlock['total_days'] = np.zeros(nBlocks)
@@ -445,6 +462,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
         mhwBlock['intensity_mean_abs'][iBlock] += mhw['intensity_mean_abs'][i]
         mhwBlock['intensity_cumulative_abs'][iBlock] += mhw['intensity_cumulative_abs'][i]
         mhwBlock['intensity_var_abs'][iBlock] += mhw['intensity_var_abs'][i]
+        mhwBlock['intensity_max_norm'][iBlock] += mhw['intensity_max_norm'][i]
+        mhwBlock['intensity_mean_norm'][iBlock] += mhw['intensity_mean_norm'][i]
         mhwBlock['rate_onset'][iBlock] += mhw['rate_onset'][i]
         mhwBlock['rate_decline'][iBlock] += mhw['rate_decline'][i]
         mhwBlock['total_days'][iBlock] += mhw['duration'][i]
@@ -466,6 +485,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     mhwBlock['intensity_mean_abs'] = mhwBlock['intensity_mean_abs'] / count
     mhwBlock['intensity_cumulative_abs'] = mhwBlock['intensity_cumulative_abs'] / count
     mhwBlock['intensity_var_abs'] = mhwBlock['intensity_var_abs'] / count
+    mhwBlock['intensity_max_norm'] = mhwBlock['intensity_max_norm'] / count
+    mhwBlock['intensity_mean_norm'] = mhwBlock['intensity_mean_norm'] / count
     mhwBlock['rate_onset'] = mhwBlock['rate_onset'] / count
     mhwBlock['rate_decline'] = mhwBlock['rate_decline'] / count
 
@@ -491,6 +512,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
             mhwBlock['intensity_mean_abs'][iMissing] = np.nan
             mhwBlock['intensity_cumulative_abs'][iMissing] = np.nan
             mhwBlock['intensity_var_abs'][iMissing] = np.nan
+            mhwBlock['intensity_max_norm'][iMissing] = np.nan
+            mhwBlock['intensity_mean_norm'][iMissing] = np.nan
             mhwBlock['rate_onset'][iMissing] = np.nan
             mhwBlock['rate_decline'][iMissing] = np.nan
             mhwBlock['total_days'][iMissing] = np.nan
@@ -539,6 +562,11 @@ def meanTrend(mhwBlock, alpha=0.05):
         'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
+
+        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
+        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
+        intensity (relative to the climatology) was 1.5 times the value of the threshold
+        (relative to climatology, i.e., threshold - climatology)
  
     Notes:
 
@@ -635,6 +663,11 @@ def rank(t, mhw):
         'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
+
+        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
+        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
+        intensity (relative to the climatology) was 1.5 times the value of the threshold
+        (relative to climatology, i.e., threshold - climatology)
 
     Notes:
 
