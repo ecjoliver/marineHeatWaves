@@ -8,3 +8,4 @@ v0.7, 4 June 2015   -- Added support for missing values in temperature time seri
 v0.8, 16 July 2015  -- Added calculations of total MHW days and cumulative intensity
 v0.9, 14 Sep 2015   -- Added calculation of MHW rank and return period
 v0.10, 14 Sep 2015  -- Added calculation of normalized MHW intensity
+v0.11, 26 Oct 2015  -- Updated documentation
