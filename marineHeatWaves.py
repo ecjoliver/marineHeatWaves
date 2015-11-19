@@ -205,6 +205,8 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         tt = np.array([])
         for w in range(-windowHalfWidth, windowHalfWidth+1):
             tt = np.append(tt, clim_start+tt0 + w)
+        tt = tt[tt>=0] # Reject indices "before" the first element
+        tt = tt[tt<T] # Reject indices "after" the last element
         thresh_climYear[d-1] = np.percentile(nonans(temp[tt.astype(int)]), pctile)
         seas_climYear[d-1] = np.mean(nonans(temp[tt.astype(int)]))
     # Special case for Feb 29
