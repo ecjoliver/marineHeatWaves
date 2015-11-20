@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False):
+def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldWaves=False):
     '''
 
     Applies the Hobday et al. (in preparation) marine heat wave definition to an input time
@@ -97,6 +97,8 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
                              i.e., any consecutive blocks of NaNs with length greater
                              than maxPadLength will be left as NaN. Set as an integer.
                              (DEFAULT = False, interpolates over all missing values).
+      coldWaves              Specifies if the code should detect cold events instead of
+                             heat events. (DEFAULT = False)
 
     Notes:
 
@@ -115,6 +117,11 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
       4. For the purposes of MHW detection, any missing temp values not interpolated over (through
          optional maxPadLLength) will be set equal to the seasonal climatology. This means they will
          trigger the end/start of any adjacent temp values which satisfy the MHW criteria.
+
+      5. If the code is used to detect cold events (coldWaves = True), then it works just as for heat
+         waves except that events are detected as deviations below the (100 - pctile)th percentile
+         (e.g., the 10th instead of 90th) for at least 5 days. Intensities are reported as positive
+         values and represent the magnitude of the temperature deviation below the threshold.
 
     Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Feb 2015
 
@@ -179,6 +186,10 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     #
     # Calculate threshold and seasonal climatology (varying with day-of-year)
     #
+
+    # Flip temp time series if detecting cold waves
+    if coldWaves:
+        temp = -1.*temp
 
     # Pad missing values for all consecutive missing blocks of length <= maxPadLength
     if maxPadLength:
@@ -321,6 +332,11 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
                 mhw['rate_decline'].append((mhw_relSeas[tt_peak] - mhw_relSeas[-1]) / 1.)
             else:
                 mhw['rate_decline'].append((mhw_relSeas[tt_peak] - mhw_relSeas[-1]) / (tt_end-tt_peak))
+
+    # Flip climatology and intensties in case of cold wave detection
+    if coldWaves:
+        clim['seas'] = -1.*clim['seas']
+        clim['thresh'] = -1.*clim['thresh']
 
     return mhw, clim
 
