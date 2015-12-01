@@ -353,7 +353,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     return mhw, clim
 
 
-def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
+def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=None):
     '''
 
     Calculate statistics of marine heatwave (MHW) properties averaged over blocks of
@@ -408,6 +408,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
                              temperature values (DEFAULT = FALSE)
       clim                   The temperature climatology (including missing value information)
                              as output by marineHeatWaves.detect (required if removeMissing = TRUE)
+      temp                   Temperature time series. If included mhwBlock will output block
+                             averages of mean, max, and min temperature (DEFAULT = NONE)
 
     Notes:
 
@@ -439,6 +441,15 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     nBlocks = np.ceil((years.max() - years.min() + 1) / blockLength)
 
     #
+    # Temperature time series included?
+    #
+
+    if temp is not None:
+        sw_temp = True
+    else:
+        sw_temp = False
+
+    #
     # Initialize MHW output variable
     #
 
@@ -464,6 +475,10 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     mhwBlock['rate_decline'] = np.zeros(nBlocks)
     mhwBlock['total_days'] = np.zeros(nBlocks)
     mhwBlock['total_icum'] = np.zeros(nBlocks)
+    if sw_temp:
+        mhwBlock['temp_mean'] = np.zeros(nBlocks)
+        mhwBlock['temp_max'] = np.zeros(nBlocks)
+        mhwBlock['temp_min'] = np.zeros(nBlocks)
 
     # Start, end, and centre years for all blocks
     mhwBlock['years_start'] = years[range(0, len(years), blockLength)]
@@ -519,6 +534,14 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False):
     mhwBlock['intensity_mean_norm'] = mhwBlock['intensity_mean_norm'] / count
     mhwBlock['rate_onset'] = mhwBlock['rate_onset'] / count
     mhwBlock['rate_decline'] = mhwBlock['rate_decline'] / count
+
+    # Temperature series
+    if sw_temp:
+        for i in range(int(nBlocks)):
+            tt = (year >= mhwBlock['years_start'][i]) * (year <= mhwBlock['years_end'][i])
+            mhwBlock['temp_mean'][i] = np.nanmean(temp[tt])
+            mhwBlock['temp_max'][i] = np.nanmax(temp[tt])
+            mhwBlock['temp_min'][i] = np.nanmin(temp[tt])
 
     #
     # Remove years with missing values

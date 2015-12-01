@@ -12,3 +12,4 @@ v0.11, 26 Oct 2015  -- Updated documentation
 v0.12, 19 Nov 2015  -- Added support for 1st/last years in climatology
 v0.13, 21 Nov 2015  -- Added support for cold wave detection
 v0.14, 1 Dec 2015   -- Negative intensity for cold spells
+v0.15, 2 Dec 2015   -- Added calculation of temperature block mean, max, min
