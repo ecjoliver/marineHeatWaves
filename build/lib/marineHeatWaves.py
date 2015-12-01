@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldWaves=False):
+def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False):
     '''
 
     Applies the Hobday et al. (in preparation) marine heat wave definition to an input time
@@ -97,7 +97,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
                              i.e., any consecutive blocks of NaNs with length greater
                              than maxPadLength will be left as NaN. Set as an integer.
                              (DEFAULT = False, interpolates over all missing values).
-      coldWaves              Specifies if the code should detect cold events instead of
+      coldSpells             Specifies if the code should detect cold events instead of
                              heat events. (DEFAULT = False)
 
     Notes:
@@ -118,9 +118,10 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
          optional maxPadLLength) will be set equal to the seasonal climatology. This means they will
          trigger the end/start of any adjacent temp values which satisfy the MHW criteria.
 
-      5. If the code is used to detect cold events (coldWaves = True), then it works just as for heat
+      5. If the code is used to detect cold events (coldSpells = True), then it works just as for heat
          waves except that events are detected as deviations below the (100 - pctile)th percentile
-         (e.g., the 10th instead of 90th) for at least 5 days.
+         (e.g., the 10th instead of 90th) for at least 5 days. Intensities are reported as negative
+         values and represent the temperature anomaly below climatology.
 
     Written by Eric Oliver, Institue for Marine and Antarctic Studies, University of Tasmania, Feb 2015
 
@@ -186,8 +187,8 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     # Calculate threshold and seasonal climatology (varying with day-of-year)
     #
 
-    # Flip temp time series if detecting cold waves
-    if coldWaves:
+    # Flip temp time series if detecting cold spells
+    if coldSpells:
         temp = -1.*temp
 
     # Pad missing values for all consecutive missing blocks of length <= maxPadLength
@@ -332,10 +333,22 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
             else:
                 mhw['rate_decline'].append((mhw_relSeas[tt_peak] - mhw_relSeas[-1]) / (tt_end-tt_peak))
 
-    # Flip climatology and intensties in case of cold wave detection
-    if coldWaves:
+    # Flip climatology and intensties in case of cold spell detection
+    if coldSpells:
         clim['seas'] = -1.*clim['seas']
         clim['thresh'] = -1.*clim['thresh']
+        for ev in range(len(mhw['intensity_max'])):
+            mhw['intensity_max'][ev] = -1.*mhw['intensity_max'][ev]
+            mhw['intensity_mean'][ev] = -1.*mhw['intensity_mean'][ev]
+            mhw['intensity_cumulative'][ev] = -1.*mhw['intensity_cumulative'][ev]
+            mhw['intensity_max_relThresh'][ev] = -1.*mhw['intensity_max_relThresh'][ev]
+            mhw['intensity_mean_relThresh'][ev] = -1.*mhw['intensity_mean_relThresh'][ev]
+            mhw['intensity_cumulative_relThresh'][ev] = -1.*mhw['intensity_cumulative_relThresh'][ev]
+            mhw['intensity_max_abs'][ev] = -1.*mhw['intensity_max_abs'][ev]
+            mhw['intensity_mean_abs'][ev] = -1.*mhw['intensity_mean_abs'][ev]
+            mhw['intensity_cumulative_abs'][ev] = -1.*mhw['intensity_cumulative_abs'][ev]
+            mhw['intensity_max_norm'][ev] = -1.*mhw['intensity_max_norm'][ev]
+            mhw['intensity_mean_norm'][ev] = -1.*mhw['intensity_mean_norm'][ev]
 
     return mhw, clim
 

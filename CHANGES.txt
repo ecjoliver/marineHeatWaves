@@ -11,3 +11,4 @@ v0.10, 14 Sep 2015  -- Added calculation of normalized MHW intensity
 v0.11, 26 Oct 2015  -- Updated documentation
 v0.12, 19 Nov 2015  -- Added support for 1st/last years in climatology
 v0.13, 21 Nov 2015  -- Added support for cold wave detection
+v0.14, 1 Dec 2015   -- Negative intensity for cold spells
