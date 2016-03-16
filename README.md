@@ -57,8 +57,11 @@ Eric C. J. Oliver
 Institute for Marine and Antarctic Studies                                                                                          
 University of Tasmania                                                                                                              
 Hobart TAS, Australia
-t: (+61) 03 6226 6663
-e: eric.oliver@utas.edu.au                                                                                                          
+
+t: (+61) 03 6226 6663  
+
+e: eric.oliver@utas.edu.au  
+
 w: http://passage.phys.ocean.dal.ca/~olivere                                                                                   
 w: https://github.com/ecjoliver  
 
