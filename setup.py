@@ -8,7 +8,7 @@ setup(name='marineHeatWaves',
     description = ("A set of functions which implement the Marine Heatwave definition of Hobday et al. (2016, Prog Ocean)"),
     url = "https://github.com/ecjoliver",
     license = "LICENSE.txt",
-    long_description = open('README.txt').read(),
+    long_description = open('README.md').read(),
     py_modules=['marineHeatWaves'],
 )
 
