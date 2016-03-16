@@ -18,13 +18,13 @@ marineHeatWaves is a module for python which implements the Marine Heatwave (MHW
 This module can be installed one of two ways:
 
 1. Standard python install. On Linux/UNIX or OS X run the following command in the terminal:  
-```
-python setup.py install
-```  
-or on windows run this at the command prompt (not tested)  
-```
-setup.py install
-```
+  ```
+  python setup.py install
+  ```  
+  or on windows run this at the command prompt (not tested)  
+  ```
+  setup.py install
+  ```
 2. Alternatively just copy the marineHeatWaves.py to your working directory or any other directory from which Python can import modules.
 
 Prequisite Python modules include numpy, scipy, and datetime.
