@@ -25,7 +25,6 @@ or on windows run this at the command prompt (not tested)
 ```
 setup.py install
 ```
-
 2. Alternatively just copy the marineHeatWaves.py to your working directory or any other directory from which Python can import modules.
 
 Prequisite Python modules include numpy, scipy, and datetime.
