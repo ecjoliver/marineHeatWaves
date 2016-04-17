@@ -14,3 +14,4 @@ v0.13, 21 Nov 2015  -- Added support for cold wave detection
 v0.14, 1 Dec 2015   -- Negative intensity for cold spells
 v0.15, 2 Dec 2015   -- Added calculation of temperature block mean, max, min
 v0.16, 16 Mar 2016  -- Markdown README, mhw_stats script, full paper reference
+v0.17, 17 Apr 2016  -- Added support for climatology to be calculated from alternate time series

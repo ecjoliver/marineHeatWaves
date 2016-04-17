@@ -1,7 +1,7 @@
 '''
 
     A set of functions which implement the Marine Heat Wave (MHW)
-    definition of Hobday et al. (in preparation)
+    definition of Hobday et al. (2016)
 
 '''
 
@@ -14,10 +14,10 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False):
+def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False):
     '''
 
-    Applies the Hobday et al. (in preparation) marine heat wave definition to an input time
+    Applies the Hobday et al. (2016) marine heat wave definition to an input time
     series of temp ('temp') along with a time vector ('t'). Outputs properties of
     all detected marine heat waves.
 
@@ -99,6 +99,13 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
                              (DEFAULT = False, interpolates over all missing values).
       coldSpells             Specifies if the code should detect cold events instead of
                              heat events. (DEFAULT = False)
+      alternateClimatology   Specifies an alternate temperature time series to use for the
+                             calculation of the climatology. Format is as a list of numpy
+                             arrays: (1) the first element of the list is a time vector,
+                             in datetime format (e.g., date(1982,1,1).toordinal())
+                             [1D numpy array of length TClim] and (2) the second element of
+                             the list is a temperature vector [1D numpy array of length TClim].
+                             (DEFAULT = False)
 
     Notes:
 
@@ -187,39 +194,68 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     # Calculate threshold and seasonal climatology (varying with day-of-year)
     #
 
+    # if alternate temperature time series is supplied for the calculation of the climatology
+    if alternateClimatology:
+        tClim = alternateClimatology[0]
+        tempClim = alternateClimatology[1]
+        TClim = len(tClim)
+        yearClim = np.zeros((TClim))
+        monthClim = np.zeros((TClim))
+        dayClim = np.zeros((TClim))
+        doyClim = np.zeros((TClim))
+        for i in range(TClim):
+            yearClim[i] = date.fromordinal(tClim[i]).year
+            monthClim[i] = date.fromordinal(tClim[i]).month
+            dayClim[i] = date.fromordinal(tClim[i]).day
+            doyClim[i] = tClim[i] - date(yearClim[i].astype(int),1,1).toordinal() + 1
+        # Modify day-of-year vector so that non-leap-years run 1...59 then 61...366
+        for y in np.unique(yearClim):
+            # Check for non-leap year
+            if ~np.sum(doyClim[yearClim==y] == 366).astype(bool):
+                doyClim[(yearClim==y) * (doyClim>feb28)] += 1
+    else:
+        tempClim = temp.copy()
+        TClim = np.array([T]).copy()[0]
+        yearClim = year.copy()
+        monthClim = month.copy()
+        dayClim = day.copy()
+        doyClim = doy.copy()
+
     # Flip temp time series if detecting cold spells
     if coldSpells:
         temp = -1.*temp
+        tempClim = -1.*tempClim
 
     # Pad missing values for all consecutive missing blocks of length <= maxPadLength
     if maxPadLength:
         temp = pad(temp, maxPadLength=maxPadLength)
+        tempClim = pad(tempClim, maxPadLength=maxPadLength)
 
     # Length of climatological year
     lenClimYear = 366
     # Start and end indices
-    clim_start = np.where(year == climatologyPeriod[0])[0][0]
-    clim_end = np.where(year == climatologyPeriod[1])[0][-1]
+    clim_start = np.where(yearClim == climatologyPeriod[0])[0][0]
+    clim_end = np.where(yearClim == climatologyPeriod[1])[0][-1]
     # Inialize arrays
     thresh_climYear = np.NaN*np.zeros(lenClimYear)
     seas_climYear = np.NaN*np.zeros(lenClimYear)
     clim = {}
-    clim['thresh'] = np.NaN*np.zeros(T)
-    clim['seas'] = np.NaN*np.zeros(T)
+    clim['thresh'] = np.NaN*np.zeros(TClim)
+    clim['seas'] = np.NaN*np.zeros(TClim)
     # Loop over all day-of-year values, and calculate threshold and seasonal climatology across years
     for d in range(1,lenClimYear+1):
         # Special case for Feb 29
         if d == feb29:
             continue
         # find all indices for each day of the year +/- windowHalfWidth and from them calculate the threshold
-        tt0 = np.where(doy[clim_start:clim_end+1] == d)[0] 
+        tt0 = np.where(doyClim[clim_start:clim_end+1] == d)[0] 
         tt = np.array([])
         for w in range(-windowHalfWidth, windowHalfWidth+1):
             tt = np.append(tt, clim_start+tt0 + w)
         tt = tt[tt>=0] # Reject indices "before" the first element
-        tt = tt[tt<T] # Reject indices "after" the last element
-        thresh_climYear[d-1] = np.percentile(nonans(temp[tt.astype(int)]), pctile)
-        seas_climYear[d-1] = np.mean(nonans(temp[tt.astype(int)]))
+        tt = tt[tt<TClim] # Reject indices "after" the last element
+        thresh_climYear[d-1] = np.percentile(nonans(tempClim[tt.astype(int)]), pctile)
+        seas_climYear[d-1] = np.mean(nonans(tempClim[tt.astype(int)]))
     # Special case for Feb 29
     thresh_climYear[feb29-1] = 0.5*thresh_climYear[feb29-2] + 0.5*thresh_climYear[feb29]
     seas_climYear[feb29-1] = 0.5*seas_climYear[feb29-2] + 0.5*seas_climYear[feb29]
