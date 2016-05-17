@@ -16,3 +16,4 @@ v0.15, 2 Dec 2015   -- Added calculation of temperature block mean, max, min
 v0.16, 16 Mar 2016  -- Markdown README, mhw_stats script, full paper reference
 v0.17, 17 Apr 2016  -- Added support for climatology to be calculated from alternate time series
 v0.18, 5 May 2016   -- Fixed error in calculation of 'rate_decline'
+v0.19, 17 May 2016  -- Fixed how leap years handled in climatology
