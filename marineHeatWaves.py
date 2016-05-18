@@ -195,13 +195,9 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     for tt in range(T):
         doy[tt] = doy_leapYear[(month_leapYear == month[tt]) * (day_leapYear == day[tt])]
 
-    # Modify day-of-year vector so that non-leap-years run 1...59 then 61...366
+    # Constants (doy values for Feb-28 and Feb-29) for handling leap-years
     feb28 = 59
     feb29 = 60
-    for y in np.unique(year):
-        # Check for non-leap year
-        if ~np.sum(doy[year==y] == 366).astype(bool):
-            doy[(year==y) * (doy>feb28)] += 1
 
     #
     # Calculate threshold and seasonal climatology (varying with day-of-year)
@@ -220,12 +216,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
             yearClim[i] = date.fromordinal(tClim[i]).year
             monthClim[i] = date.fromordinal(tClim[i]).month
             dayClim[i] = date.fromordinal(tClim[i]).day
-            doyClim[i] = tClim[i] - date(yearClim[i].astype(int),1,1).toordinal() + 1
-        # Modify day-of-year vector so that non-leap-years run 1...59 then 61...366
-        for y in np.unique(yearClim):
-            # Check for non-leap year
-            if ~np.sum(doyClim[yearClim==y] == 366).astype(bool):
-                doyClim[(yearClim==y) * (doyClim>feb28)] += 1
+            doyClim[i] = doy_leapYear[(month_leapYear == monthClim[i]) * (day_leapYear == dayClim[i])]
     else:
         tempClim = temp.copy()
         TClim = np.array([T]).copy()[0]
@@ -262,6 +253,9 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
             continue
         # find all indices for each day of the year +/- windowHalfWidth and from them calculate the threshold
         tt0 = np.where(doyClim[clim_start:clim_end+1] == d)[0] 
+        # If this doy value does not exist (i.e. in 360-day calendars) then skip it
+        if len(tt0) == 0:
+            continue
         tt = np.array([])
         for w in range(-windowHalfWidth, windowHalfWidth+1):
             tt = np.append(tt, clim_start+tt0 + w)
@@ -275,8 +269,16 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
 
     # Smooth if desired
     if smoothPercentile:
-        thresh_climYear = runavg(thresh_climYear, smoothPercentileWidth)
-        seas_climYear = runavg(seas_climYear, smoothPercentileWidth)
+        # If the climatology contains NaNs, then assume it is a <365-day year and deal accordingly
+        if np.sum(np.isnan(seas_climYear)) + np.sum(np.isnan(thresh_climYear)):
+            valid = ~np.isnan(thresh_climYear)
+            thresh_climYear[valid] = runavg(thresh_climYear[valid], smoothPercentileWidth)
+            valid = ~np.isnan(seas_climYear)
+            seas_climYear[valid] = runavg(seas_climYear[valid], smoothPercentileWidth)
+        # >= 365-day year
+        else:
+            thresh_climYear = runavg(thresh_climYear, smoothPercentileWidth)
+            seas_climYear = runavg(seas_climYear, smoothPercentileWidth)
 
     # Generate threshold for full time series
     clim['thresh'] = thresh_climYear[doy.astype(int)-1]
