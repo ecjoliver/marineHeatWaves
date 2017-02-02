@@ -713,7 +713,7 @@ def meanTrend(mhwBlock, alpha=0.05):
         valid = ~np.isnan(y) # non-NaN indices
 
         # Perform linear regression over valid indices
-        if np.isinf(y.sum()): # If contains Inf values
+        if np.isinf(nonans(y).sum()): # If contains Inf values
             beta = [np.nan, np.nan]
         elif np.sum(~np.isnan(y)) > 0: # If at least one non-NaN value
             beta = linalg.lstsq(X[valid,:], y[valid])[0]
