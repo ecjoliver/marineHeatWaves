@@ -428,6 +428,7 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
         'count'                Total MHW count in each block
         'duration'             Average MHW duration in each block [days]
         'intensity_max'        Average MHW "maximum (peak) intensity" in each block [deg. C]
+        'intensity_max_max'    Maximum MHW "maximum (peak) intensity" in each block [deg. C]
         'intensity_mean'       Average MHW "mean intensity" in each block [deg. C]
         'intensity_var'        Average MHW "intensity variability" in each block [deg. C]
         'intensity_cumulative' Average MHW "cumulative intensity" in each block [deg. C x days]
@@ -509,6 +510,7 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     mhwBlock['count'] = np.zeros(nBlocks)
     mhwBlock['duration'] = np.zeros(nBlocks)
     mhwBlock['intensity_max'] = np.zeros(nBlocks)
+    mhwBlock['intensity_max_max'] = np.zeros(nBlocks)
     mhwBlock['intensity_mean'] = np.zeros(nBlocks)
     mhwBlock['intensity_cumulative'] = np.zeros(nBlocks)
     mhwBlock['intensity_var'] = np.zeros(nBlocks)
@@ -547,6 +549,7 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
         mhwBlock['count'][iBlock] += 1
         mhwBlock['duration'][iBlock] += mhw['duration'][i]
         mhwBlock['intensity_max'][iBlock] += mhw['intensity_max'][i]
+        mhwBlock['intensity_max_max'][iBlock] = np.max([mhwBlock['intensity_max_max'][iBlock], mhw['intensity_max'][i]])
         mhwBlock['intensity_mean'][iBlock] += mhw['intensity_mean'][i]
         mhwBlock['intensity_cumulative'][iBlock] += mhw['intensity_cumulative'][i]
         mhwBlock['intensity_var'][iBlock] += mhw['intensity_var'][i]
@@ -592,6 +595,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     mhwBlock['intensity_mean_norm'] = mhwBlock['intensity_mean_norm'] / count
     mhwBlock['rate_onset'] = mhwBlock['rate_onset'] / count
     mhwBlock['rate_decline'] = mhwBlock['rate_decline'] / count
+    # Replace empty years in intensity_max_max
+    mhwBlock['intensity_max_max'][np.isnan(mhwBlock['intensity_max'])] = np.nan
 
     # Temperature series
     if sw_temp:
@@ -612,6 +617,7 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
             mhwBlock['count'][iMissing] = np.nan
             mhwBlock['duration'][iMissing] = np.nan
             mhwBlock['intensity_max'][iMissing] = np.nan
+            mhwBlock['intensity_max_max'][iMissing] = np.nan
             mhwBlock['intensity_mean'][iMissing] = np.nan
             mhwBlock['intensity_cumulative'][iMissing] = np.nan
             mhwBlock['intensity_var'][iMissing] = np.nan

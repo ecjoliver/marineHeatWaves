@@ -20,3 +20,4 @@ v0.19, 17 May 2016  -- Fixed how leap years handled in climatology
 v0.20, 6 July 2016  -- Fixed handling of Infs in meanTrend function
 v0.21, 10 Jan 2017  -- Fixed calculation of Total MHW Days in mhwBlock function
 v0.22, 3 Feb 2017   -- Minor fix to meanTrend function handling of 'inf' values
+v0.23, 28 Feb 2017  -- Added blockAverage metric 'intensity_max_max'
