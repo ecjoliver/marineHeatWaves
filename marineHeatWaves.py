@@ -57,10 +57,13 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
 
-        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
-        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
-        intensity (relative to the climatology) was 1.5 times the value of the threshold
-        (relative to climatology, i.e., threshold - climatology)
+        'category' is an integer category system (1, 2, 3, 4) based on the maximum intensity
+        in multiples of threshold exceedances, i.e., a value of 1 indicates the MHW
+        intensity (relative to the climatology) was >=1 times the value of the threshold (but
+        less than 2 times; relative to climatology, i.e., threshold - climatology).
+        Category types are defined as 1=strong, 2=moderate, 3=severe, 4=extreme. More details in
+        Hobday et al. (in prep., Oceanography). Also supplied are the duration of each of these
+        categories for each event.
 
         'n_events'             A scalar integer (not a list) indicating the total
                                number of detected MHW events
@@ -149,6 +152,10 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     mhw['index_end'] = []
     mhw['index_peak'] = []
     mhw['duration'] = [] # [days]
+    mhw['duration_moderate'] = [] # [days]
+    mhw['duration_strong'] = [] # [days]
+    mhw['duration_severe'] = [] # [days]
+    mhw['duration_extreme'] = [] # [days]
     mhw['intensity_max'] = [] # [deg C]
     mhw['intensity_mean'] = [] # [deg C]
     mhw['intensity_var'] = [] # [deg C]
@@ -161,8 +168,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     mhw['intensity_mean_abs'] = [] # [deg C]
     mhw['intensity_var_abs'] = [] # [deg C]
     mhw['intensity_cumulative_abs'] = [] # [deg C]
-    mhw['intensity_max_norm'] = []
-    mhw['intensity_mean_norm'] = []
+    mhw['category'] = []
     mhw['rate_onset'] = [] # [deg C / day]
     mhw['rate_decline'] = [] # [deg C / day]
 
@@ -328,6 +334,7 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
 
     # Calculate marine heat wave properties
     mhw['n_events'] = len(mhw['time_start'])
+    categories = np.array(['Moderate', 'Strong', 'Severe', 'Extreme'])
     for ev in range(mhw['n_events']):
         mhw['date_start'].append(date.fromordinal(mhw['time_start'][ev]))
         mhw['date_end'].append(date.fromordinal(mhw['time_end'][ev]))
@@ -363,8 +370,14 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         mhw['intensity_mean_abs'].append(mhw_abs.mean())
         mhw['intensity_var_abs'].append(np.sqrt(mhw_abs.var()))
         mhw['intensity_cumulative_abs'].append(mhw_abs.sum())
-        mhw['intensity_max_norm'].append(1. + mhw_relThreshNorm[tt_peak])
-        mhw['intensity_mean_norm'].append(1. + mhw_relThreshNorm.mean())
+        # Fix categories
+        cats = np.floor(1. + mhw_relThreshNorm)
+        mhw['category'].append(categories[np.min([cats[tt_peak], 4]).astype(int) - 1])
+        mhw['duration_moderate'].append(np.sum(cats == 1.))
+        mhw['duration_strong'].append(np.sum(cats == 2.))
+        mhw['duration_severe'].append(np.sum(cats == 3.))
+        mhw['duration_extreme'].append(np.sum(cats >= 4.))
+        
         # Rates of onset and decline
         # Requires getting MHW strength at "start" and "end" of event (continuous: assume start/end half-day before/after first/last point)
         if tt_start > 0:
@@ -398,8 +411,6 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
             mhw['intensity_max_abs'][ev] = -1.*mhw['intensity_max_abs'][ev]
             mhw['intensity_mean_abs'][ev] = -1.*mhw['intensity_mean_abs'][ev]
             mhw['intensity_cumulative_abs'][ev] = -1.*mhw['intensity_cumulative_abs'][ev]
-            mhw['intensity_max_norm'][ev] = -1.*mhw['intensity_max_norm'][ev]
-            mhw['intensity_mean_norm'][ev] = -1.*mhw['intensity_mean_norm'][ev]
 
     return mhw, clim
 
@@ -444,11 +455,6 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
         'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
-
-        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
-        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
-        intensity (relative to the climatology) was 1.5 times the value of the threshold
-        (relative to climatology, i.e., threshold - climatology)
 
     Options:
 
@@ -522,11 +528,13 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     mhwBlock['intensity_mean_abs'] = np.zeros(nBlocks)
     mhwBlock['intensity_cumulative_abs'] = np.zeros(nBlocks)
     mhwBlock['intensity_var_abs'] = np.zeros(nBlocks)
-    mhwBlock['intensity_max_norm'] = np.zeros(nBlocks)
-    mhwBlock['intensity_mean_norm'] = np.zeros(nBlocks)
     mhwBlock['rate_onset'] = np.zeros(nBlocks)
     mhwBlock['rate_decline'] = np.zeros(nBlocks)
     mhwBlock['total_days'] = np.zeros(nBlocks)
+    #mhwBlock['moderate_days'] = np.zeros(nBlocks)
+    #mhwBlock['strong_days'] = np.zeros(nBlocks)
+    #mhwBlock['severe_days'] = np.zeros(nBlocks)
+    #mhwBlock['extreme_days'] = np.zeros(nBlocks)
     mhwBlock['total_icum'] = np.zeros(nBlocks)
     if sw_temp:
         mhwBlock['temp_mean'] = np.zeros(nBlocks)
@@ -561,12 +569,14 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
         mhwBlock['intensity_mean_abs'][iBlock] += mhw['intensity_mean_abs'][i]
         mhwBlock['intensity_cumulative_abs'][iBlock] += mhw['intensity_cumulative_abs'][i]
         mhwBlock['intensity_var_abs'][iBlock] += mhw['intensity_var_abs'][i]
-        mhwBlock['intensity_max_norm'][iBlock] += mhw['intensity_max_norm'][i]
-        mhwBlock['intensity_mean_norm'][iBlock] += mhw['intensity_mean_norm'][i]
         mhwBlock['rate_onset'][iBlock] += mhw['rate_onset'][i]
         mhwBlock['rate_decline'][iBlock] += mhw['rate_decline'][i]
         if mhw['date_start'][i].year == mhw['date_end'][i].year: # MHW in single year
             mhwBlock['total_days'][iBlock] += mhw['duration'][i]
+            #mhwBlock['moderate_days'][iBlock] += mhw['duration_moderate'][i]
+            #mhwBlock['strong_days'][iBlock] += mhw['duration_strong'][i]
+            #mhwBlock['severe_days'][iBlock] += mhw['duration_severe'][i]
+            #mhwBlock['extreme_days'][iBlock] += mhw['duration_extreme'][i]
         else: # MHW spans multiple years
             year_mhw = year[mhw['index_start'][i]:mhw['index_end'][i]+1]
             for yr_mhw in np.unique(year_mhw):
@@ -591,8 +601,6 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     mhwBlock['intensity_mean_abs'] = mhwBlock['intensity_mean_abs'] / count
     mhwBlock['intensity_cumulative_abs'] = mhwBlock['intensity_cumulative_abs'] / count
     mhwBlock['intensity_var_abs'] = mhwBlock['intensity_var_abs'] / count
-    mhwBlock['intensity_max_norm'] = mhwBlock['intensity_max_norm'] / count
-    mhwBlock['intensity_mean_norm'] = mhwBlock['intensity_mean_norm'] / count
     mhwBlock['rate_onset'] = mhwBlock['rate_onset'] / count
     mhwBlock['rate_decline'] = mhwBlock['rate_decline'] / count
     # Replace empty years in intensity_max_max
@@ -629,11 +637,13 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
             mhwBlock['intensity_mean_abs'][iMissing] = np.nan
             mhwBlock['intensity_cumulative_abs'][iMissing] = np.nan
             mhwBlock['intensity_var_abs'][iMissing] = np.nan
-            mhwBlock['intensity_max_norm'][iMissing] = np.nan
-            mhwBlock['intensity_mean_norm'][iMissing] = np.nan
             mhwBlock['rate_onset'][iMissing] = np.nan
             mhwBlock['rate_decline'][iMissing] = np.nan
             mhwBlock['total_days'][iMissing] = np.nan
+            #mhwBlock['moderate_days'][iMissing] = np.nan
+            #mhwBlock['strong_days'][iMissing] = np.nan
+            #mhwBlock['severe_days'][iMissing] = np.nan
+            #mhwBlock['extreme_days'][iMissing] = np.nan
             mhwBlock['total_icum'][iMissing] = np.nan
 
     return mhwBlock
@@ -680,11 +690,6 @@ def meanTrend(mhwBlock, alpha=0.05):
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
 
-        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
-        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
-        intensity (relative to the climatology) was 1.5 times the value of the threshold
-        (relative to climatology, i.e., threshold - climatology)
- 
     Notes:
 
       This calculation performs a multiple linear regression of the form
@@ -782,11 +787,6 @@ def rank(t, mhw):
         'intensity_max_abs', 'intensity_mean_abs', 'intensity_var_abs', and
         'intensity_cumulative_abs' are as above except as absolute magnitudes
         rather than relative to the seasonal climatology or threshold
-
-        'intensity_max_norm' and 'intensity_mean_norm' are as above except units are in
-        multiples of threshold exceedances, i.e., a value of 1.5 indicates the MHW
-        intensity (relative to the climatology) was 1.5 times the value of the threshold
-        (relative to climatology, i.e., threshold - climatology)
 
     Notes:
 
