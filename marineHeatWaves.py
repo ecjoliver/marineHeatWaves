@@ -371,8 +371,9 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
         mhw['intensity_var_abs'].append(np.sqrt(mhw_abs.var()))
         mhw['intensity_cumulative_abs'].append(mhw_abs.sum())
         # Fix categories
+        tt_peakCat = np.argmax(mhw_relThreshNorm)
         cats = np.floor(1. + mhw_relThreshNorm)
-        mhw['category'].append(categories[np.min([cats[tt_peak], 4]).astype(int) - 1])
+        mhw['category'].append(categories[np.min([cats[tt_peakCat], 4]).astype(int) - 1])
         mhw['duration_moderate'].append(np.sum(cats == 1.))
         mhw['duration_strong'].append(np.sum(cats == 2.))
         mhw['duration_severe'].append(np.sum(cats == 3.))
