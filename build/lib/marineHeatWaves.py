@@ -497,7 +497,7 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
 
     # Number of blocks, round up to include partial blocks at end
     years = np.unique(year)
-    nBlocks = np.ceil((years.max() - years.min() + 1) / blockLength).astype(int)
+    nBlocks = np.ceil((years.max() - years.min() + 1) / blockLength)
 
     #
     # Temperature time series included?
