@@ -470,9 +470,6 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
       temp                   Temperature time series. If included mhwBlock will output block
                              averages of mean, max, and min temperature (DEFAULT = NONE)
 
-                             If both clim and temp are provided, this will output annual counts
-                             of moderate, strong, severe, and extreme days.
-
     Notes:
 
       This function assumes that the input time vector consists of continuous daily values. Note that
@@ -508,10 +505,6 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
 
     if temp is not None:
         sw_temp = True
-        if clim is not None:
-            sw_cats = True
-        else:
-            sw_cats = False
     else:
         sw_temp = False
 
@@ -539,23 +532,15 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     mhwBlock['rate_onset'] = np.zeros(nBlocks)
     mhwBlock['rate_decline'] = np.zeros(nBlocks)
     mhwBlock['total_days'] = np.zeros(nBlocks)
+    #mhwBlock['moderate_days'] = np.zeros(nBlocks)
+    #mhwBlock['strong_days'] = np.zeros(nBlocks)
+    #mhwBlock['severe_days'] = np.zeros(nBlocks)
+    #mhwBlock['extreme_days'] = np.zeros(nBlocks)
     mhwBlock['total_icum'] = np.zeros(nBlocks)
     if sw_temp:
         mhwBlock['temp_mean'] = np.zeros(nBlocks)
         mhwBlock['temp_max'] = np.zeros(nBlocks)
         mhwBlock['temp_min'] = np.zeros(nBlocks)
-
-    # Calculate category days
-    if sw_cats:
-        mhwBlock['moderate_days'] = np.zeros(nBlocks)
-        mhwBlock['strong_days'] = np.zeros(nBlocks)
-        mhwBlock['severe_days'] = np.zeros(nBlocks)
-        mhwBlock['extreme_days'] = np.zeros(nBlocks)
-        cats = np.floor(1 + (temp - clim['thresh']) / (clim['thresh'] - clim['seas']))
-        mhwIndex = np.zeros(t.shape)
-        for ev in range(mhw['n_events']):
-            mhwIndex[mhw['index_start'][ev]:mhw['index_end'][ev]+1] = 1.
-
 
     # Start, end, and centre years for all blocks
     mhwBlock['years_start'] = years[range(0, len(years), blockLength)]
@@ -589,6 +574,10 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
         mhwBlock['rate_decline'][iBlock] += mhw['rate_decline'][i]
         if mhw['date_start'][i].year == mhw['date_end'][i].year: # MHW in single year
             mhwBlock['total_days'][iBlock] += mhw['duration'][i]
+            #mhwBlock['moderate_days'][iBlock] += mhw['duration_moderate'][i]
+            #mhwBlock['strong_days'][iBlock] += mhw['duration_strong'][i]
+            #mhwBlock['severe_days'][iBlock] += mhw['duration_severe'][i]
+            #mhwBlock['extreme_days'][iBlock] += mhw['duration_extreme'][i]
         else: # MHW spans multiple years
             year_mhw = year[mhw['index_start'][i]:mhw['index_end'][i]+1]
             for yr_mhw in np.unique(year_mhw):
@@ -596,14 +585,6 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
                 mhwBlock['total_days'][iBlock] += np.sum(year_mhw == yr_mhw)
         # NOTE: icum for a MHW is assigned to its start year, even if it spans mult. years
         mhwBlock['total_icum'][iBlock] += mhw['intensity_cumulative'][i]
-
-    # Calculation of category days
-    if sw_cats:
-        for i in range(int(nBlocks)):
-            mhwBlock['moderate_days'][i] = ((year >= mhwBlock['years_start'][i]) * (year <= mhwBlock['years_end'][i]) * mhwIndex * (cats == 1)).astype(int).sum()
-            mhwBlock['strong_days'][i] = ((year >= mhwBlock['years_start'][i]) * (year <= mhwBlock['years_end'][i]) * mhwIndex * (cats == 2)).astype(int).sum()
-            mhwBlock['severe_days'][i] = ((year >= mhwBlock['years_start'][i]) * (year <= mhwBlock['years_end'][i]) * mhwIndex * (cats == 3)).astype(int).sum()
-            mhwBlock['extreme_days'][i] = ((year >= mhwBlock['years_start'][i]) * (year <= mhwBlock['years_end'][i]) * mhwIndex * (cats >= 4)).astype(int).sum()
 
     # Calculate averages
     count = 1.*mhwBlock['count']
@@ -660,11 +641,10 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
             mhwBlock['rate_onset'][iMissing] = np.nan
             mhwBlock['rate_decline'][iMissing] = np.nan
             mhwBlock['total_days'][iMissing] = np.nan
-            if sw_cats:
-                mhwBlock['moderate_days'][iMissing] = np.nan
-                mhwBlock['strong_days'][iMissing] = np.nan
-                mhwBlock['severe_days'][iMissing] = np.nan
-                mhwBlock['extreme_days'][iMissing] = np.nan
+            #mhwBlock['moderate_days'][iMissing] = np.nan
+            #mhwBlock['strong_days'][iMissing] = np.nan
+            #mhwBlock['severe_days'][iMissing] = np.nan
+            #mhwBlock['extreme_days'][iMissing] = np.nan
             mhwBlock['total_icum'][iMissing] = np.nan
 
     return mhwBlock
