@@ -506,6 +506,8 @@ def blockAverage(t, mhw, clim=None, blockLength=1, removeMissing=False, temp=Non
     # Temperature time series included?
     #
 
+    sw_temp = None
+    sw_cats = None
     if temp is not None:
         sw_temp = True
         if clim is not None:

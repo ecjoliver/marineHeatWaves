@@ -24,3 +24,4 @@ v0.23, 28 Feb 2017  -- Added blockAverage metric 'intensity_max_max'
 v0.24, 28 Mar 2017  -- Added MHW category metric
 v0.25, 12 Jul 2017  -- Fixed float64/integer error
 v0.26, 8 Dec 2017   -- Added calculation of total moderate, strong, severe and extree days to mhwBlock function
+v0.27, 19 Jan 2018  -- Minor bug fixed in category calculation
