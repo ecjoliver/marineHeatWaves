@@ -53,11 +53,11 @@ Contributors to the Marine Heatwaves definition and its numerical implementation
 # Contact
 
 Eric C. J. Oliver  
-Department of Oceanography
-Dalhousie University
-Halifax, Nova Scotia, Canada
-t: (61) 902 494-2505
-e: eric.oliver@dal.ca
-w: http://ecjoliver.weebly.com
+Department of Oceanography  
+Dalhousie University  
+Halifax, Nova Scotia, Canada  
+t: (61) 902 494-2505  
+e: eric.oliver@dal.ca  
+w: http://ecjoliver.weebly.com  
 w: https://github.com/ecjoliver  
 
