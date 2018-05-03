@@ -53,11 +53,11 @@ Contributors to the Marine Heatwaves definition and its numerical implementation
 # Contact
 
 Eric C. J. Oliver  
-Institute for Marine and Antarctic Studies  
-University of Tasmania  
-Hobart TAS, Australia  
-t: (+61) 03 6226 6663  
-e: eric.oliver@utas.edu.au  
-w: http://passage.phys.ocean.dal.ca/~olivere  
+Department of Oceanography
+Dalhousie University
+Halifax, Nova Scotia, Canada
+t: (61) 902 494-2505
+e: eric.oliver@dal.ca
+w: http://ecjoliver.weebly.com
 w: https://github.com/ecjoliver  
 
