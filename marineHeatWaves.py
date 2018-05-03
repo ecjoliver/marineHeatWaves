@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False):
+def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False):
     '''
 
     Applies the Hobday et al. (2016) marine heat wave definition to an input time
@@ -79,7 +79,9 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     Options:
 
       climatologyPeriod      Period over which climatology is calculated, specified
-                             as list of start and end years (DEFAULT = [1983,2012])
+                             as list of start and end years. Default is to calculate
+                             over the full range of years in the supplied time series.
+                             Alternate periods suppled as a list e.g. [1983,2012].
       pctile                 Threshold percentile (%) for detection of extreme values
                              (DEFAULT = 90)
       windowHalfWidth        Width of window (one sided) about day-of-year used for
@@ -204,6 +206,11 @@ def detect(t, temp, climatologyPeriod=[1983,2012], pctile=90, windowHalfWidth=5,
     # Constants (doy values for Feb-28 and Feb-29) for handling leap-years
     feb28 = 59
     feb29 = 60
+
+    # Set climatology period, if unset use full range of available data
+    if (climatologyPeriod[0] is None) or (climatologyPeriod[1] is None):
+        climatologyPeriod[0] = year[0]
+        climatologyPeriod[1] = year[-1]
 
     #
     # Calculate threshold and seasonal climatology (varying with day-of-year)
