@@ -1,6 +1,6 @@
 # Marine Heatwaves detection code
 
-marineHeatWaves is a module for python which implements the Marine Heatwave (MHW) definition of Hobday et al. (2016). A version written in R is also [available on CRAN](https://cran.r-project.org/web/packages/RmarineHeatWaves/index.html).
+marineHeatWaves is a module for python which implements the Marine Heatwave (MHW) definition of Hobday et al. (2016). A version written in R is also [available](https://robwschlegel.github.io/heatwaveR/index.html).
 
 # Contents
 
