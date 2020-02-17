@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 from datetime import date
 
 
-def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False, Ly=False):
+def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5, smoothPercentile=True, smoothPercentileWidth=31, minDuration=5, joinAcrossGaps=True, maxGap=2, maxPadLength=False, coldSpells=False, alternateClimatology=False):
     '''
 
     Applies the Hobday et al. (2016) marine heat wave definition to an input time
@@ -111,9 +111,6 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
                              [1D numpy array of length TClim] and (2) the second element of
                              the list is a temperature vector [1D numpy array of length TClim].
                              (DEFAULT = False)
-      Ly                     Specifies if the length of the year is < 365/366 days (e.g. a 
-                             360 day year from a climate model). This affects the calculation
-                             of the climatology. (DEFAULT = False)
 
     Notes:
 
@@ -277,16 +274,16 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
             tt = np.append(tt, clim_start+tt0 + w)
         tt = tt[tt>=0] # Reject indices "before" the first element
         tt = tt[tt<TClim] # Reject indices "after" the last element
-        thresh_climYear[d-1] = np.nanpercentile(tempClim[tt.astype(int)], pctile)
-        seas_climYear[d-1] = np.nanmean(tempClim[tt.astype(int)])
+        thresh_climYear[d-1] = np.percentile(nonans(tempClim[tt.astype(int)]), pctile)
+        seas_climYear[d-1] = np.mean(nonans(tempClim[tt.astype(int)]))
     # Special case for Feb 29
     thresh_climYear[feb29-1] = 0.5*thresh_climYear[feb29-2] + 0.5*thresh_climYear[feb29]
     seas_climYear[feb29-1] = 0.5*seas_climYear[feb29-2] + 0.5*seas_climYear[feb29]
 
     # Smooth if desired
     if smoothPercentile:
-        # If the length of year is < 365/366 (e.g. a 360 day year from a Climate Model)
-        if Ly:
+        # If the climatology contains NaNs, then assume it is a <365-day year and deal accordingly
+        if np.sum(np.isnan(seas_climYear)) + np.sum(np.isnan(thresh_climYear)):
             valid = ~np.isnan(thresh_climYear)
             thresh_climYear[valid] = runavg(thresh_climYear[valid], smoothPercentileWidth)
             valid = ~np.isnan(seas_climYear)
@@ -313,8 +310,6 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
     exceed_bool = temp - clim['thresh']
     exceed_bool[exceed_bool<=0] = False
     exceed_bool[exceed_bool>0] = True
-    # Fix issue where missing temp vaues (nan) are counted as True
-    exceed_bool[np.isnan(exceed_bool)] = False
     # Find contiguous regions of exceed_bool = True
     events, n_events = ndimage.label(exceed_bool)
 
