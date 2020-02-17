@@ -26,3 +26,4 @@ v0.25, 12 Jul 2017  -- Fixed float64/integer error
 v0.26, 8 Dec 2017   -- Added calculation of total moderate, strong, severe and extree days to mhwBlock function
 v0.27, 19 Jan 2018  -- Minor bug fixed in category calculation
 v0.28, 2 May 2018   -- Changed default climatologyPeriod in detect function
+v0.29, 17 Feb 2020  -- Fixed handling of ice-season; Added length of year option (Ly)
