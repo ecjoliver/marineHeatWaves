@@ -61,7 +61,7 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
         in multiples of threshold exceedances, i.e., a value of 1 indicates the MHW
         intensity (relative to the climatology) was >=1 times the value of the threshold (but
         less than 2 times; relative to climatology, i.e., threshold - climatology).
-        Category types are defined as 1=strong, 2=moderate, 3=severe, 4=extreme. More details in
+        Category types are defined as 1=moderate, 2=strong, 3=severe, 4=extreme. More details in
         Hobday et al. (in prep., Oceanography). Also supplied are the duration of each of these
         categories for each event.
 
