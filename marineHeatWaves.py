@@ -257,11 +257,11 @@ def detect(t, temp, climatologyPeriod=[None,None], pctile=90, windowHalfWidth=5,
     clim_start = np.where(yearClim == climatologyPeriod[0])[0][0]
     clim_end = np.where(yearClim == climatologyPeriod[1])[0][-1]
     # Inialize arrays
-    thresh_climYear = np.NaN*np.zeros(lenClimYear)
-    seas_climYear = np.NaN*np.zeros(lenClimYear)
+    thresh_climYear = np.nan*np.zeros(lenClimYear)
+    seas_climYear = np.nan*np.zeros(lenClimYear)
     clim = {}
-    clim['thresh'] = np.NaN*np.zeros(TClim)
-    clim['seas'] = np.NaN*np.zeros(TClim)
+    clim['thresh'] = np.nan*np.zeros(TClim)
+    clim['seas'] = np.nan*np.zeros(TClim)
     # Loop over all day-of-year values, and calculate threshold and seasonal climatology across years
     for d in range(1,lenClimYear+1):
         # Special case for Feb 29

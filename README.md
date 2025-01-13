@@ -15,17 +15,16 @@ marineHeatWaves is a module for python which implements the Marine Heatwave (MHW
 
 # Installation
 
-This module can be installed one of two ways:
-
-1. Standard python install. On Linux/UNIX or OS X run the following command in the terminal:  
+This module can be installed in one of three ways:
+1. Install from PyPI using:
+```
+pip install marineHeatWaves
+```
+2. Build from source, downloading the tar.gz file from [the latest release](https://github.com/ecjoliver/marineHeatWaves/releases) on Github: 
   ```
-  python setup.py install
+  pip install /path/to/your/file/marineheatwaves-0.0.30.tar.gz
   ```  
-  or on windows run this at the command prompt (not tested)  
-  ```
-  setup.py install
-  ```
-2. Alternatively just copy the marineHeatWaves.py to your working directory or any other directory from which Python can import modules.
+3. Alternatively just copy the marineHeatWaves.py to your working directory or any other directory from which Python can import modules.
 
 Prequisite Python modules include numpy, scipy, and datetime.
 
@@ -39,6 +38,14 @@ Inside the documentation folder are the following helpful files and scripts:
 |example_synthetic.ipynb   |IPython notebook outlining use of marineHeatWaves code to detect events from a synthetic time series. This notebook can be run by the user as it relies only on internally-generated synthetic temperature data.|
 |example_synthetic.html    |Static HTML version of example_synthetic.ipynb.|
 |mhw_stats.py              |Script with some examples of how to output plots, stats, and data files from marineHeatWaves detection code. Requires a subfolder to be created with the name 'mhw_stats', to which all files are output.|
+
+# Developer Notes
+
+This package is built using setuptools uses `pyproject.toml` as a packaging file. To build a new version of the package use:
+```
+python -m build
+```
+Before running ensure a recent version of `build` is installed with `python -m pip install --upgrade build`.
 
 # References
 
@@ -60,4 +67,3 @@ t: (61) 902 494-2505
 e: eric.oliver@dal.ca  
 w: http://ecjoliver.weebly.com  
 w: https://github.com/ecjoliver  
-
